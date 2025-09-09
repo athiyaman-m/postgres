@@ -3266,12 +3266,18 @@ FindDeletedTupleInLocalRel(Relation localrel, Oid localidxoid,
 
 		/*
 		 * Obtain the information from the leader apply worker as only the
-		 * leader manages conflict retention (see
+		 * leader manages oldest_nonremovable_xid (see
 		 * maybe_advance_nonremovable_xid() for details).
 		 */
 		LWLockAcquire(LogicalRepWorkerLock, LW_SHARED);
 		leader = logicalrep_worker_find(MyLogicalRepWorker->subid,
 										InvalidOid, false);
+		if (!leader)
+		{
+			ereport(ERROR,
+					(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+					 errmsg("could not detect conflict as the leader apply worker has exited")));
+		}
 
 		SpinLockAcquire(&leader->relmutex);
 		oldestxmin = leader->oldest_nonremovable_xid;
@@ -4595,11 +4601,28 @@ wait_for_local_flush(RetainDeadTuplesData *rdt_data)
 	 * workers is complex and not worth the effort, so we simply return if not
 	 * all tables are in the READY state.
 	 *
-	 * It is safe to add new tables with initial states to the subscription
-	 * after this check because any changes applied to these tables should
-	 * have a WAL position greater than the rdt_data->remote_lsn.
+	 * Advancing the transaction ID is necessary even when no tables are
+	 * currently subscribed, to avoid retaining dead tuples unnecessarily.
+	 * While it might seem safe to skip all phases and directly assign
+	 * candidate_xid to oldest_nonremovable_xid during the
+	 * RDT_GET_CANDIDATE_XID phase in such cases, this is unsafe. If users
+	 * concurrently add tables to the subscription, the apply worker may not
+	 * process invalidations in time. Consequently,
+	 * HasSubscriptionRelationsCached() might miss the new tables, leading to
+	 * premature advancement of oldest_nonremovable_xid.
+	 *
+	 * Performing the check during RDT_WAIT_FOR_LOCAL_FLUSH is safe, as
+	 * invalidations are guaranteed to be processed before applying changes
+	 * from newly added tables while waiting for the local flush to reach
+	 * remote_lsn.
+	 *
+	 * Additionally, even if we check for subscription tables during
+	 * RDT_GET_CANDIDATE_XID, they might be dropped before reaching
+	 * RDT_WAIT_FOR_LOCAL_FLUSH. Therefore, it's still necessary to verify
+	 * subscription tables at this stage to prevent unnecessary tuple
+	 * retention.
 	 */
-	if (!AllTablesyncsReady())
+	if (HasSubscriptionRelationsCached() && !AllTablesyncsReady())
 	{
 		TimestampTz now;
 
