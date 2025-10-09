@@ -42,6 +42,7 @@ AfterTriggersTableData
 AfterTriggersTransData
 Agg
 AggClauseCosts
+AggClauseInfo
 AggInfo
 AggPath
 AggSplit
@@ -1110,6 +1111,7 @@ GroupPathExtraData
 GroupResultPath
 GroupState
 GroupVarInfo
+GroupingExprInfo
 GroupingFunc
 GroupingSet
 GroupingSetData
@@ -2352,6 +2354,8 @@ PsqlScanStateData
 PsqlSettings
 Publication
 PublicationActions
+PublicationAllObjSpec
+PublicationAllObjType
 PublicationDesc
 PublicationInfo
 PublicationObjSpec
@@ -2473,6 +2477,7 @@ ReindexObjectType
 ReindexParams
 ReindexStmt
 ReindexType
+RelAggInfo
 RelFileLocator
 RelFileLocatorBackend
 RelFileNumber
@@ -2568,6 +2573,7 @@ RestrictInfo
 Result
 ResultRelInfo
 ResultState
+ResultType
 RetainDeadTuplesData
 RetainDeadTuplesPhase
 ReturnSetInfo
@@ -2603,6 +2609,7 @@ RtlNtStatusToDosError_t
 RuleInfo
 RuleLock
 RuleStmt
+RunMode
 RunningTransactions
 RunningTransactionsData
 SASLStatus
@@ -2683,6 +2690,7 @@ SecLabelStmt
 SeenRelsEntry
 SelectLimit
 SelectStmt
+SelectStmtPassthrough
 Selectivity
 SelfJoinCandidate
 SemTPadded

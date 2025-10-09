@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "access/transam.h"
 #include "catalog/pg_type.h"
 #include "common/int.h"
 #include "funcapi.h"
@@ -4601,7 +4602,7 @@ array_create_iterator(ArrayType *arr, int slice_ndim, ArrayMetaState *mstate)
 	/*
 	 * Sanity-check inputs --- caller should have got this right already
 	 */
-	Assert(PointerIsValid(arr));
+	Assert(arr);
 	if (slice_ndim < 0 || slice_ndim > ARR_NDIM(arr))
 		elog(ERROR, "invalid arguments to array_create_iterator");
 
